@@ -5,6 +5,7 @@ struct MenuBarView: View {
     @EnvironmentObject var clipboardWatcher: ClipboardWatcher
     @State private var searchText = ""
     @State private var showingPreferences = false
+    @State private var showingHelp = false
 
     var filteredEntries: [ClipboardEntry] {
         if searchText.isEmpty {
@@ -103,10 +104,13 @@ struct MenuBarView: View {
 
             Spacer()
 
+            Button(action: { showingHelp = true }) {
+                Image(systemName: "questionmark.circle")
+            }
+            .buttonStyle(.plain)
+            .help("Help & Shortcuts")
+
             Button(action: {
-                if let url = URL(string: "x-apple.systempreferences:") {
-                    NSWorkspace.shared.open(url)
-                }
                 NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
             }) {
                 Image(systemName: "gear")
@@ -122,6 +126,112 @@ struct MenuBarView: View {
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
+        .sheet(isPresented: $showingHelp) {
+            HelpView()
+        }
+    }
+}
+
+struct HelpView: View {
+    @Environment(\.dismiss) var dismiss
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Text("Demoskop Clipboard")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                Spacer()
+                Button(action: { dismiss() }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(.secondary)
+                }
+                .buttonStyle(.plain)
+            }
+
+            Divider()
+
+            // Keyboard Shortcuts
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Keyboard Shortcuts")
+                    .font(.headline)
+
+                shortcutRow("⇧⌥V", "Show clipboard history")
+                shortcutRow("⌥⌘V", "Paste as rich text")
+                shortcutRow("⇧⌥⌘V", "Paste as plain text")
+            }
+
+            Divider()
+
+            // Markdown Conversion
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Markdown → Rich Text")
+                    .font(.headline)
+
+                Text("Automatic conversion happens when you copy text containing Markdown:")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("• **bold** → ").font(.caption) + Text("bold").font(.caption).bold()
+                    Text("• *italic* → ").font(.caption) + Text("italic").font(.caption).italic()
+                    Text("• # Heading → ").font(.caption) + Text("Heading").font(.caption).bold()
+                    Text("• [link](url) → clickable link").font(.caption)
+                    Text("• `code` → monospace text").font(.caption)
+                }
+                .padding(.leading, 8)
+
+                Text("Just copy Markdown text normally. When you paste into Word, Mail, or Notes, it will be formatted automatically.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
+            Divider()
+
+            // Icons explanation
+            VStack(alignment: .leading, spacing: 8) {
+                Text("History Icons")
+                    .font(.headline)
+
+                HStack(spacing: 16) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "text.badge.checkmark")
+                            .foregroundColor(.blue)
+                        Text("= Rich text ready")
+                            .font(.caption)
+                    }
+                    HStack(spacing: 4) {
+                        Image(systemName: "star.fill")
+                            .foregroundColor(.yellow)
+                        Text("= Favorite")
+                            .font(.caption)
+                    }
+                }
+            }
+
+            Spacer()
+
+            Text("© 2026 Demoskop")
+                .font(.caption2)
+                .foregroundColor(.secondary)
+                .frame(maxWidth: .infinity, alignment: .center)
+        }
+        .padding()
+        .frame(width: 320, height: 420)
+    }
+
+    private func shortcutRow(_ shortcut: String, _ description: String) -> some View {
+        HStack {
+            Text(shortcut)
+                .font(.system(.caption, design: .monospaced))
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(Color.secondary.opacity(0.2))
+                .cornerRadius(4)
+            Text(description)
+                .font(.caption)
+            Spacer()
+        }
     }
 }
 
