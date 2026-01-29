@@ -1,6 +1,9 @@
 import Foundation
 import AppKit
 import KeyboardShortcuts
+import os.log
+
+private let logger = Logger(subsystem: "com.company.ClipboardManager", category: "HotKeyService")
 
 // MARK: - Keyboard Shortcut Names
 
@@ -22,8 +25,37 @@ final class HotKeyService: ObservableObject {
     static let shared = HotKeyService()
 
     @Published private(set) var isRegistered = false
+    @Published private(set) var hasAccessibilityPermission = false
 
-    private init() {}
+    private init() {
+        checkAccessibilityPermission()
+    }
+
+    /// Checks if the app has Accessibility permission (required for CGEvent posting)
+    /// - Parameter prompt: If true, shows system prompt if permission not granted
+    /// - Returns: true if permission is granted
+    @discardableResult
+    func checkAccessibilityPermission(prompt: Bool = false) -> Bool {
+        let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue(): prompt]
+        let trusted = AXIsProcessTrustedWithOptions(options)
+        hasAccessibilityPermission = trusted
+
+        if !trusted {
+            logger.warning("Accessibility permission not granted - paste simulation will not work")
+        } else {
+            logger.info("Accessibility permission granted")
+        }
+
+        return trusted
+    }
+
+    /// Prompts user for accessibility permission if not already granted
+    func requestAccessibilityPermission() {
+        if !hasAccessibilityPermission {
+            logger.info("Requesting accessibility permission from user")
+            checkAccessibilityPermission(prompt: true)
+        }
+    }
 
     /// Registers all default hotkeys
     func registerDefaultHotkey() {
@@ -90,7 +122,18 @@ final class HotKeyService: ObservableObject {
     }
 
     /// Simulates a Cmd+V paste keystroke
+    /// Requires Accessibility permission to work
     private func simulatePaste() {
+        // Check for accessibility permission first
+        guard checkAccessibilityPermission() else {
+            logger.error("Cannot simulate paste: Accessibility permission not granted")
+            // Prompt user for permission
+            DispatchQueue.main.async { [weak self] in
+                self?.requestAccessibilityPermission()
+            }
+            return
+        }
+
         // Small delay to ensure clipboard is updated
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
             let source = CGEventSource(stateID: .hidSystemState)
@@ -106,6 +149,8 @@ final class HotKeyService: ObservableObject {
             // Post events
             keyDown?.post(tap: .cghidEventTap)
             keyUp?.post(tap: .cghidEventTap)
+
+            logger.debug("Paste keystroke simulated")
         }
     }
 }

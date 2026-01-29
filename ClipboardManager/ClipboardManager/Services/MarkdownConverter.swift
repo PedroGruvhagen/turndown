@@ -176,6 +176,8 @@ final class MarkdownConverter {
     }
 
     /// Converts HTML string to NSAttributedString using native macOS APIs
+    /// IMPORTANT: This method MUST be called from the main thread or will dispatch to it
+    /// because NSAttributedString with HTML document type uses WebKit internally
     private func htmlToAttributedString(_ html: String) -> NSAttributedString? {
         guard let data = html.data(using: .utf8) else {
             return nil
@@ -186,6 +188,23 @@ final class MarkdownConverter {
             .characterEncoding: String.Encoding.utf8.rawValue
         ]
 
+        // NSAttributedString with HTML uses WebKit and MUST run on main thread
+        if Thread.isMainThread {
+            return createAttributedString(from: data, options: options)
+        } else {
+            var result: NSAttributedString?
+            DispatchQueue.main.sync {
+                result = self.createAttributedString(from: data, options: options)
+            }
+            return result
+        }
+    }
+
+    /// Helper to create attributed string (called on main thread)
+    private func createAttributedString(
+        from data: Data,
+        options: [NSAttributedString.DocumentReadingOptionKey: Any]
+    ) -> NSAttributedString? {
         do {
             let attributedString = try NSAttributedString(
                 data: data,
