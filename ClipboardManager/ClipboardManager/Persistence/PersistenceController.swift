@@ -26,7 +26,7 @@ final class PersistenceController {
     private init() {
         // Create the Core Data model programmatically
         let model = Self.createModel()
-        container = NSPersistentContainer(name: "ClipboardManager", managedObjectModel: model)
+        container = NSPersistentContainer(name: "DemoskopClipboard", managedObjectModel: model)
 
         // Configure store location
         let storeURL = Self.defaultStoreURL()
@@ -122,7 +122,7 @@ final class PersistenceController {
     /// Returns the default store URL in Application Support
     private static func defaultStoreURL() -> URL {
         let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let appFolder = appSupportURL.appendingPathComponent("ClipboardManager", isDirectory: true)
+        let appFolder = appSupportURL.appendingPathComponent("se.demoskop.clipboard", isDirectory: true)
 
         // Create directory if needed
         try? FileManager.default.createDirectory(at: appFolder, withIntermediateDirectories: true)

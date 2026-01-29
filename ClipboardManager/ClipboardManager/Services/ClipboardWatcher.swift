@@ -5,10 +5,10 @@ import os.log
 
 /// Custom UTI used to mark clipboard items that have been processed by this app
 /// Prevents infinite loops when writing back to clipboard
-let kProcessedUTI = "com.clipboardmanager.processed"
+let kProcessedUTI = "se.demoskop.clipboard.processed"
 
 /// Logging subsystem for clipboard operations
-private let logger = Logger(subsystem: "com.company.ClipboardManager", category: "ClipboardWatcher")
+private let logger = Logger(subsystem: "se.demoskop.clipboard", category: "ClipboardWatcher")
 
 /// Service that monitors the system clipboard for changes
 /// Uses timer-based polling since macOS doesn't provide clipboard change notifications

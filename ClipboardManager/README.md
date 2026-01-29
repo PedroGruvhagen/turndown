@@ -1,6 +1,6 @@
-# ClipboardManager
+# Demoskop Clipboard
 
-A powerful native macOS clipboard history manager with automatic Markdown to Rich Text conversion.
+A native macOS clipboard history manager with automatic Markdown to Rich Text conversion, built for Demoskop.
 
 ## Features
 
@@ -20,7 +20,21 @@ A powerful native macOS clipboard history manager with automatic Markdown to Ric
 
 ## Installation
 
-### From Source
+### From Source (Recommended: Swift Package Manager)
+
+1. Clone the repository
+2. Navigate to the `ClipboardManager` directory
+3. Build with Swift Package Manager:
+   ```bash
+   cd ClipboardManager
+   swift build -c release
+   ```
+4. Or use the build script:
+   ```bash
+   ./scripts/build-release.sh
+   ```
+
+### From Source (Xcode)
 
 1. Clone the repository
 2. Open `ClipboardManager.xcodeproj` in Xcode
@@ -54,7 +68,7 @@ Click the clipboard icon in the menu bar to:
 
 ### Markdown Conversion
 
-When you copy text that contains Markdown formatting, ClipboardManager automatically:
+When you copy text that contains Markdown formatting, DemoskopClipboard automatically:
 1. Detects the Markdown syntax
 2. Converts it to rich text (RTF/HTML)
 3. Updates the clipboard with both formats
@@ -94,36 +108,30 @@ Access via the gear icon in the menu bar dropdown or ⌘, (Cmd+Comma).
 
 2. **Build for Distribution**:
    ```bash
-   # Archive
-   xcodebuild -project ClipboardManager.xcodeproj \
-              -scheme ClipboardManager \
-              -archivePath build/ClipboardManager.xcarchive \
-              archive
+   # Using the build script (recommended)
+   cd ClipboardManager
+   ./scripts/build-release.sh
 
-   # Export
-   xcodebuild -exportArchive \
-              -archivePath build/ClipboardManager.xcarchive \
-              -exportPath build/export \
-              -exportOptionsPlist ExportOptions.plist
+   # This creates build/DemoskopClipboard.app
    ```
 
 3. **Notarize**:
    ```bash
-   xcrun notarytool submit build/export/ClipboardManager.app \
+   xcrun notarytool submit build/export/DemoskopClipboard.app \
                    --apple-id "your@email.com" \
                    --team-id "YOURTEAMID" \
                    --password "@keychain:AC_PASSWORD" \
                    --wait
 
-   xcrun stapler staple build/export/ClipboardManager.app
+   xcrun stapler staple build/export/DemoskopClipboard.app
    ```
 
 4. **Create DMG**:
    ```bash
-   hdiutil create -volname "ClipboardManager" \
-                  -srcfolder build/export/ClipboardManager.app \
-                  -ov -format UDZO \
-                  build/ClipboardManager.dmg
+   # Using the DMG script (recommended)
+   ./scripts/create-dmg.sh
+
+   # This creates build/DemoskopClipboard-{version}.dmg
    ```
 
 ### MDM Distribution
@@ -137,21 +145,26 @@ For enterprise deployment via Jamf, Mosyle, or other MDM solutions:
 
 ```
 ClipboardManager/
-├── ClipboardManagerApp.swift    # Main app entry point
+├── ClipboardManagerApp.swift     # Main app entry point
 ├── Views/
-│   ├── MenuBarView.swift        # Main menu bar UI
-│   └── PreferencesView.swift    # Settings UI
+│   ├── MenuBarView.swift         # Main menu bar UI
+│   └── PreferencesView.swift     # Settings UI
 ├── Services/
-│   ├── ClipboardWatcher.swift   # Clipboard monitoring
-│   ├── MarkdownConverter.swift  # MD → RTF conversion
-│   ├── HotKeyService.swift      # Global shortcuts
-│   ├── UpdateService.swift      # Sparkle auto-updates
+│   ├── ClipboardWatcher.swift    # Clipboard monitoring
+│   ├── MarkdownConverter.swift   # MD → RTF conversion
+│   ├── HotKeyService.swift       # Global shortcuts
+│   ├── UpdateService.swift       # Sparkle auto-updates
 │   └── LaunchAtLoginService.swift
 ├── Models/
-│   └── ClipboardEntry.swift     # Data model
-└── Persistence/
-    ├── PersistenceController.swift  # Core Data setup
-    └── HistoryStore.swift           # History management
+│   └── ClipboardEntry.swift      # Data model
+├── Persistence/
+│   ├── PersistenceController.swift  # Core Data setup
+│   └── HistoryStore.swift           # History management
+└── scripts/
+    ├── build-release.sh          # Build .app bundle
+    ├── create-dmg.sh             # Create DMG installer
+    ├── generate_keys.sh          # Sparkle key generation
+    └── sign_update.sh            # Sign updates for Sparkle
 ```
 
 ## Dependencies
@@ -163,7 +176,7 @@ ClipboardManager/
 ## Privacy & Security
 
 - **No network access**: The app works entirely offline (except for update checks)
-- **Local storage only**: All data stored in `~/Library/Application Support/ClipboardManager/`
+- **Local storage only**: All data stored in `~/Library/Application Support/se.demoskop.clipboard/`
 - **No telemetry**: We don't collect any usage data
 - **Hardened Runtime**: Enabled for maximum security
 - **Sandboxing**: Disabled to allow clipboard access (required functionality)

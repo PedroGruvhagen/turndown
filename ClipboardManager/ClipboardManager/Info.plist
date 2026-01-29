@@ -13,7 +13,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>$(PRODUCT_NAME)</string>
+	<string>Demoskop Clipboard</string>
 	<key>CFBundlePackageType</key>
 	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
 	<key>CFBundleShortVersionString</key>
@@ -25,14 +25,14 @@
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSHumanReadableCopyright</key>
-	<string>Copyright © 2024 Your Company. All rights reserved.</string>
+	<string>Copyright © 2026 Demoskop. All rights reserved.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>SUPublicEDKey</key>
-	<string>YOUR_ED25519_PUBLIC_KEY_HERE</string>
+	<string></string>
 	<key>SUFeedURL</key>
-	<string>https://yourcompany.com/appcast.xml</string>
+	<string>https://updates.demoskop.se/demoskop-clipboard/appcast.xml</string>
 	<key>NSAppleEventsUsageDescription</key>
-	<string>ClipboardManager needs to send keystrokes for paste functionality.</string>
+	<string>Demoskop Clipboard needs to send keystrokes for paste functionality.</string>
 </dict>
 </plist>

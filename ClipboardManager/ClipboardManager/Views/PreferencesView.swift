@@ -124,14 +124,14 @@ struct PreferencesView: View {
                 .font(.system(size: 64))
                 .foregroundColor(.accentColor)
 
-            Text("Clipboard Manager")
+            Text("Demoskop Clipboard")
                 .font(.title)
                 .fontWeight(.bold)
 
             Text("Version \(Bundle.main.appVersion)")
                 .foregroundColor(.secondary)
 
-            Text("A powerful clipboard history manager with automatic Markdown to rich text conversion.")
+            Text("Clipboard history manager with automatic Markdown to rich text conversion.")
                 .multilineTextAlignment(.center)
                 .foregroundColor(.secondary)
                 .padding(.horizontal)
@@ -142,15 +142,9 @@ struct PreferencesView: View {
                 Button("Check for Updates") {
                     UpdateService.shared.checkForUpdates()
                 }
-
-                Button("GitHub") {
-                    if let url = URL(string: "https://github.com/yourcompany/clipboard-manager") {
-                        NSWorkspace.shared.open(url)
-                    }
-                }
             }
 
-            Text("© 2024 Your Company. All rights reserved.")
+            Text("© 2026 Demoskop. All rights reserved.")
                 .font(.caption)
                 .foregroundColor(.secondary)
         }

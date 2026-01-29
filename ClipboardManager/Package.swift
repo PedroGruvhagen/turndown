@@ -4,14 +4,14 @@
 import PackageDescription
 
 let package = Package(
-    name: "ClipboardManager",
+    name: "DemoskopClipboard",
     platforms: [
         .macOS(.v13)
     ],
     products: [
         .executable(
-            name: "ClipboardManager",
-            targets: ["ClipboardManager"]
+            name: "DemoskopClipboard",
+            targets: ["DemoskopClipboard"]
         )
     ],
     dependencies: [
@@ -24,7 +24,7 @@ let package = Package(
     ],
     targets: [
         .executableTarget(
-            name: "ClipboardManager",
+            name: "DemoskopClipboard",
             dependencies: [
                 "Down",
                 "KeyboardShortcuts",

@@ -3,7 +3,7 @@ import AppKit
 import KeyboardShortcuts
 import os.log
 
-private let logger = Logger(subsystem: "com.company.ClipboardManager", category: "HotKeyService")
+private let logger = Logger(subsystem: "se.demoskop.clipboard", category: "HotKeyService")
 
 // MARK: - Keyboard Shortcut Names
 
