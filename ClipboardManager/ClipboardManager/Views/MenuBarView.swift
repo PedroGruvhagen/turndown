@@ -126,14 +126,15 @@ struct MenuBarView: View {
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
-        .sheet(isPresented: $showingHelp) {
-            HelpView()
+        .sheet(isPresented: $showingHelp, onDismiss: { showingHelp = false }) {
+            HelpView(isPresented: $showingHelp)
         }
     }
 }
 
 struct HelpView: View {
     @Environment(\.dismiss) var dismiss
+    @Binding var isPresented: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -142,11 +143,13 @@ struct HelpView: View {
                     .font(.title2)
                     .fontWeight(.bold)
                 Spacer()
-                Button(action: { dismiss() }) {
+                Button(action: { closeHelp() }) {
                     Image(systemName: "xmark.circle.fill")
+                        .font(.title2)
                         .foregroundColor(.secondary)
                 }
                 .buttonStyle(.plain)
+                .keyboardShortcut(.escape, modifiers: [])
             }
 
             Divider()
@@ -218,6 +221,12 @@ struct HelpView: View {
         }
         .padding()
         .frame(width: 320, height: 420)
+        .onExitCommand { closeHelp() }
+    }
+
+    private func closeHelp() {
+        isPresented = false
+        dismiss()
     }
 
     private func shortcutRow(_ shortcut: String, _ description: String) -> some View {

@@ -20,7 +20,9 @@ let package = Package(
         // Global keyboard shortcuts
         .package(url: "https://github.com/sindresorhus/KeyboardShortcuts.git", from: "2.0.0"),
         // Auto-update framework
-        .package(url: "https://github.com/sparkle-project/Sparkle.git", from: "2.5.0")
+        .package(url: "https://github.com/sparkle-project/Sparkle.git", from: "2.5.0"),
+        // Programmatic MenuBarExtra control
+        .package(url: "https://github.com/orchetect/MenuBarExtraAccess.git", from: "1.0.0")
     ],
     targets: [
         .executableTarget(
@@ -28,7 +30,8 @@ let package = Package(
             dependencies: [
                 "Down",
                 "KeyboardShortcuts",
-                "Sparkle"
+                "Sparkle",
+                "MenuBarExtraAccess"
             ],
             path: "ClipboardManager"
         )

@@ -87,15 +87,11 @@ final class HotKeyService: ObservableObject {
 
     /// Shows the clipboard history window/popover
     private func showClipboardHistory() {
-        // Post notification to show the menu bar popover
-        NotificationCenter.default.post(name: .showClipboardHistory, object: nil)
-
-        // Alternative: Programmatically click the menu bar item
-        // This is a workaround since MenuBarExtra doesn't have a direct show API
+        logger.debug("Showing clipboard history via hotkey")
+        // Post notification to toggle the menu bar popover
+        // The app listens for this and toggles isMenuPresented via MenuBarExtraAccess
         DispatchQueue.main.async {
-            if let button = NSApp.windows.first(where: { $0.className.contains("StatusBar") })?.contentView?.subviews.first as? NSButton {
-                button.performClick(nil)
-            }
+            NotificationCenter.default.post(name: .showClipboardHistory, object: nil)
         }
     }
 
