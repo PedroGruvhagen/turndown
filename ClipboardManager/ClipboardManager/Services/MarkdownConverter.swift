@@ -129,9 +129,14 @@ final class MarkdownConverter {
     /// - Returns: ConversionResult containing RTF data, HTML, and attributed string, or nil if conversion fails
     func convert(_ markdown: String) -> ConversionResult? {
         do {
+            // Step 0: Pre-process markdown tables (Down doesn't support GFM tables)
+            let preprocessedMarkdown = preprocessMarkdownTables(markdown)
+
             // Step 1: Convert Markdown to HTML using Down
-            let down = Down(markdownString: markdown)
-            let html = try down.toHTML(.default)
+            // Use .unsafe to allow our preprocessed HTML tables to pass through
+            // (cmark's default mode strips raw HTML since v0.29.0)
+            let down = Down(markdownString: preprocessedMarkdown)
+            let html = try down.toHTML(.unsafe)
 
             // Step 2: Wrap HTML with styles and proper structure
             let styledHTML = wrapWithStyles(html)
@@ -205,6 +210,215 @@ final class MarkdownConverter {
         result = result.replacingOccurrences(
             of: "<tr>",
             with: "<tr style=\"border-bottom:1px solid #ccc;\">"
+        )
+
+        return result
+    }
+
+    /// Pre-processes markdown to convert GFM tables to HTML
+    /// Down library uses cmark (not cmark-gfm) and doesn't support tables
+    /// This method converts markdown tables to HTML before Down processes the rest
+    private func preprocessMarkdownTables(_ markdown: String) -> String {
+        return convertAllTables(markdown)
+    }
+
+    /// Converts all markdown tables in the text to HTML
+    private func convertAllTables(_ markdown: String) -> String {
+        let lines = markdown.components(separatedBy: "\n")
+        var result: [String] = []
+        var i = 0
+
+        while i < lines.count {
+            // Check if this line starts a table
+            if isTableRow(lines[i]) && i + 1 < lines.count && isTableSeparator(lines[i + 1]) {
+                // Found a table
+                let headerLine = lines[i]
+                let separatorLine = lines[i + 1]
+                var dataLines: [String] = []
+
+                i += 2 // Skip header and separator
+
+                // Collect data rows
+                while i < lines.count && isTableRow(lines[i]) {
+                    dataLines.append(lines[i])
+                    i += 1
+                }
+
+                // Parse alignment from separator
+                let alignments = parseAlignments(separatorLine)
+
+                // Convert to HTML
+                let html = buildTableHTML(headerLine: headerLine, dataLines: dataLines, alignments: alignments)
+                result.append(html)
+            } else {
+                result.append(lines[i])
+                i += 1
+            }
+        }
+
+        return result.joined(separator: "\n")
+    }
+
+    /// Checks if a line looks like a table row (contains pipes)
+    private func isTableRow(_ line: String) -> Bool {
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        // Must contain at least one pipe and have content
+        return trimmed.contains("|") && trimmed.count > 1
+    }
+
+    /// Checks if a line is a table separator (|---|---|)
+    private func isTableSeparator(_ line: String) -> Bool {
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        // Must contain pipes and dashes, and mostly consist of |, -, :, and spaces
+        guard trimmed.contains("|") && trimmed.contains("-") else { return false }
+
+        // Check that the line is primarily separator characters
+        let separatorChars = CharacterSet(charactersIn: "|-: ")
+        let nonSeparatorChars = trimmed.unicodeScalars.filter { !separatorChars.contains($0) }
+        return nonSeparatorChars.isEmpty
+    }
+
+    /// Parses alignment from separator line
+    private func parseAlignments(_ separator: String) -> [String] {
+        let cells = parseCells(separator)
+        return cells.map { cell -> String in
+            let trimmed = cell.trimmingCharacters(in: .whitespaces)
+            let startsColon = trimmed.hasPrefix(":")
+            let endsColon = trimmed.hasSuffix(":")
+
+            if startsColon && endsColon {
+                return "center"
+            } else if endsColon {
+                return "right"
+            } else {
+                return "left"
+            }
+        }
+    }
+
+    /// Parses cells from a table row
+    private func parseCells(_ row: String) -> [String] {
+        var trimmed = row.trimmingCharacters(in: .whitespaces)
+
+        // Remove leading and trailing pipes if present
+        if trimmed.hasPrefix("|") {
+            trimmed = String(trimmed.dropFirst())
+        }
+        if trimmed.hasSuffix("|") {
+            trimmed = String(trimmed.dropLast())
+        }
+
+        // Split by pipe
+        return trimmed.components(separatedBy: "|").map { $0.trimmingCharacters(in: .whitespaces) }
+    }
+
+    /// Builds HTML table from parsed data
+    private func buildTableHTML(headerLine: String, dataLines: [String], alignments: [String]) -> String {
+        var html = "<table>\n"
+
+        // Header row
+        let headerCells = parseCells(headerLine)
+        html += "<thead><tr>\n"
+        for (index, cell) in headerCells.enumerated() {
+            let align = index < alignments.count ? alignments[index] : "left"
+            // Process inline markdown in cell content
+            let processedCell = processInlineMarkdown(cell)
+            html += "<th style=\"text-align:\(align)\">\(processedCell)</th>\n"
+        }
+        html += "</tr></thead>\n"
+
+        // Data rows
+        html += "<tbody>\n"
+        for dataLine in dataLines {
+            let dataCells = parseCells(dataLine)
+            html += "<tr>\n"
+            for (index, cell) in dataCells.enumerated() {
+                let align = index < alignments.count ? alignments[index] : "left"
+                let processedCell = processInlineMarkdown(cell)
+                html += "<td style=\"text-align:\(align)\">\(processedCell)</td>\n"
+            }
+            html += "</tr>\n"
+        }
+        html += "</tbody>\n"
+
+        html += "</table>\n"
+        return html
+    }
+
+    /// Converts a table (array of lines) to HTML
+    private func convertTableToHTML(_ lines: [String]) -> String {
+        guard !lines.isEmpty else { return "" }
+
+        // First line is header
+        let headerCells = parseCells(lines[0])
+
+        var html = "<table>\n<thead><tr>\n"
+        for cell in headerCells {
+            let processedCell = processInlineMarkdown(cell)
+            html += "<th>\(processedCell)</th>\n"
+        }
+        html += "</tr></thead>\n<tbody>\n"
+
+        // Rest are data rows
+        for i in 1..<lines.count {
+            let cells = parseCells(lines[i])
+            html += "<tr>\n"
+            for cell in cells {
+                let processedCell = processInlineMarkdown(cell)
+                html += "<td>\(processedCell)</td>\n"
+            }
+            html += "</tr>\n"
+        }
+
+        html += "</tbody>\n</table>\n"
+        return html
+    }
+
+    /// Process inline markdown (bold, italic, code) within table cells
+    private func processInlineMarkdown(_ text: String) -> String {
+        var result = text
+
+        // Escape HTML special characters first
+        result = result.replacingOccurrences(of: "&", with: "&amp;")
+        result = result.replacingOccurrences(of: "<", with: "&lt;")
+        result = result.replacingOccurrences(of: ">", with: "&gt;")
+
+        // Bold: **text** or __text__
+        result = result.replacingOccurrences(
+            of: "\\*\\*(.+?)\\*\\*",
+            with: "<strong>$1</strong>",
+            options: .regularExpression
+        )
+        result = result.replacingOccurrences(
+            of: "__(.+?)__",
+            with: "<strong>$1</strong>",
+            options: .regularExpression
+        )
+
+        // Italic: *text* or _text_
+        result = result.replacingOccurrences(
+            of: "\\*(.+?)\\*",
+            with: "<em>$1</em>",
+            options: .regularExpression
+        )
+        result = result.replacingOccurrences(
+            of: "(?<![\\w])_(.+?)_(?![\\w])",
+            with: "<em>$1</em>",
+            options: .regularExpression
+        )
+
+        // Inline code: `code`
+        result = result.replacingOccurrences(
+            of: "`([^`]+)`",
+            with: "<code>$1</code>",
+            options: .regularExpression
+        )
+
+        // Links: [text](url)
+        result = result.replacingOccurrences(
+            of: "\\[([^\\]]+)\\]\\(([^)]+)\\)",
+            with: "<a href=\"$2\">$1</a>",
+            options: .regularExpression
         )
 
         return result
