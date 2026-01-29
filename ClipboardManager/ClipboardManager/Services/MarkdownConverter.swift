@@ -161,6 +161,9 @@ final class MarkdownConverter {
 
     /// Wraps HTML content with DOCTYPE, head, and styles
     private func wrapWithStyles(_ html: String) -> String {
+        // Post-process tables to add HTML attributes for better RTF compatibility
+        let processedHtml = enhanceTablesForRTF(html)
+
         return """
         <!DOCTYPE html>
         <html>
@@ -169,10 +172,42 @@ final class MarkdownConverter {
             \(cssStyles)
         </head>
         <body>
-        \(html)
+        \(processedHtml)
         </body>
         </html>
         """
+    }
+
+    /// Enhances HTML tables with attributes for better RTF/NSAttributedString compatibility
+    /// NSAttributedString's HTML parser works better with old-school HTML attributes than CSS
+    private func enhanceTablesForRTF(_ html: String) -> String {
+        var result = html
+
+        // Replace <table> with styled version using HTML attributes
+        result = result.replacingOccurrences(
+            of: "<table>",
+            with: "<table border=\"1\" cellpadding=\"8\" cellspacing=\"0\" style=\"border-collapse:collapse; width:100%;\">"
+        )
+
+        // Enhance table headers with background color
+        result = result.replacingOccurrences(
+            of: "<th>",
+            with: "<th style=\"background-color:#e8e8e8; font-weight:bold; text-align:left; padding:8px; border:1px solid #999;\">"
+        )
+
+        // Enhance table cells with padding and borders
+        result = result.replacingOccurrences(
+            of: "<td>",
+            with: "<td style=\"padding:8px; border:1px solid #ccc; text-align:left;\">"
+        )
+
+        // Enhance table rows
+        result = result.replacingOccurrences(
+            of: "<tr>",
+            with: "<tr style=\"border-bottom:1px solid #ccc;\">"
+        )
+
+        return result
     }
 
     /// Converts HTML string to NSAttributedString using native macOS APIs
